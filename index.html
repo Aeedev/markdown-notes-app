@@ -3,32 +3,53 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <meta name="description" content="A simple, offline-ready Markdown Notes App built for privacy and speed." />
-  <meta name="author" content="Your Name" />
-  <title>Markdown Notes - Minimal Note-Taking</title>
+  <meta name="description" content="GreenNotes - Markdown Notes App with Save, Delete, Preview, and Dark Mode." />
+  <meta name="author" content="Adriana" />
+  <title>GreenNotes</title>
   <link rel="stylesheet" href="style.css" />
-  <link rel="icon" href="data:," />
+
+  <!-- ✅ Favicon and Web Manifest -->
+  <link rel="apple-touch-icon" sizes="180x180" href="favicon_io/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon_io/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon_io/favicon-16x16.png">
+  <link rel="manifest" href="favicon_io/site.webmanifest">
+  <link rel="shortcut icon" href="favicon_io/favicon.ico">
+  <meta name="theme-color" content="#4caf50">
 </head>
 <body>
-  <div class="container">
-    <div class="top-bar">
-      <h1>📝 Markdown Notes</h1>
-      <button id="toggle-theme">🌙</button>
-    </div>
+  <div class="app-container">
 
-    <div class="editor">
-      <textarea id="markdown" placeholder="Write your notes in Markdown..."></textarea>
-      <div id="preview" class="preview"></div>
-    </div>
+    <!-- Sidebar for Saved Notes -->
+    <aside class="sidebar">
+      <h2>📁 Saved Notes</h2>
+      <ul id="notes-list"></ul>
+      <div class="sidebar-buttons">
+        <button id="add-note">➕ Add New Note</button>
+        <button id="save-note">💾 Save Note</button>
+      </div>
+    </aside>
 
-    <div class="buttons">
-      <button id="clear">🗑️ Clear Notes</button>
-      <button id="export">📤 Export as .md</button>
+    <!-- Main Editor Area -->
+    <div class="main-content">
+      <div class="top-bar">
+        <h1>🌿 GreenNotes</h1>
+        <button id="toggle-theme">🌙</button>
+      </div>
+
+      <div class="editor">
+        <textarea id="markdown" placeholder="Write your notes in Markdown..."></textarea>
+        <div id="preview" class="preview"></div>
+      </div>
+
+      <div class="buttons">
+        <button id="clear">🗑️ Clear</button>
+        <button id="export">📤 Export .md</button>
+      </div>
     </div>
   </div>
 
   <footer>
-    <p>Made with ❤️ by Adriana — <a href="https://github.com/Aeedev">GitHub</a></p>
+    <p>Made with <span class="green-heart">💚</span> by Adriana — <a href="https://github.com/Aeedev" target="_blank">GitHub</a></p>
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
