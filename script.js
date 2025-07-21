@@ -1,110 +1,197 @@
-document.addEventListener('DOMContentLoaded', () => {
-  const textarea = document.getElementById('markdown');
-  const preview = document.getElementById('preview');
-  const clearBtn = document.getElementById('clear');
-  const themeToggle = document.getElementById('toggle-theme');
-  const exportBtn = document.getElementById('export');
-  const saveNoteBtn = document.getElementById('save-note');
-  const addNoteBtn = document.getElementById('add-note');
-  const notesList = document.getElementById('notes-list');
+// script.js
+const editor = document.getElementById('editor');
+const uploadInput = document.getElementById('upload-image');
+const uploadBtn = document.getElementById('upload-btn');
+const clearBtn = document.getElementById('clear');
+const exportBtn = document.getElementById('export');
+const saveBtn = document.getElementById('save-note');
+const addNoteBtn = document.getElementById('add-note');
+const notesList = document.getElementById('notes-list');
+const toggleThemeBtn = document.getElementById('toggle-theme');
+const insertTitleBtn = document.getElementById('title-btn');
+const attachInput = document.getElementById('attach-file');
+const attachBtn = document.getElementById('attach-btn');
+const deleteSelectedBtn = document.getElementById('delete-selected');
+const deleteAllBtn = document.getElementById('delete-all');
 
-  const getNotes = () => JSON.parse(localStorage.getItem('savedNotes')) || [];
+let notes = JSON.parse(localStorage.getItem('greenNotes')) || [];
 
-  textarea.addEventListener('input', () => {
-    preview.innerHTML = marked.parse(textarea.value);
-  });
+function getRelativeTime(timestamp) {
+  const now = new Date();
+  const seconds = Math.floor((now - new Date(timestamp)) / 1000);
 
-  themeToggle.addEventListener('click', () => {
-    document.body.classList.toggle('dark');
-    themeToggle.textContent = document.body.classList.contains('dark') ? '☀️' : '🌙';
-  });
+  if (seconds < 60) return 'just now';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+  const days = Math.floor(hours / 24);
+  return `${days} day${days > 1 ? 's' : ''} ago`;
+}
 
-  clearBtn.addEventListener('click', () => {
-    if (confirm('Clear current note?')) {
-      textarea.value = '';
-      preview.innerHTML = '';
-    }
-  });
+function updateNotesList() {
+  notesList.innerHTML = '';
+  notes = notes.filter(note => note && typeof note === 'object' && note.content);
 
-  exportBtn.addEventListener('click', () => {
-    const content = textarea.value.trim();
-    if (!content) {
-      alert("Nothing to export.");
-      return;
-    }
-    const blob = new Blob([content], { type: "text/markdown" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "note.md";
-    a.click();
-    URL.revokeObjectURL(url);
-  });
+  notes.forEach((note, index) => {
+    const li = document.createElement('li');
+    li.classList.add('note-item');
 
-  addNoteBtn.addEventListener('click', () => {
-    textarea.value = '';
-    preview.innerHTML = '';
-  });
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.className = 'select-note';
+    checkbox.dataset.index = index;
 
-  saveNoteBtn.addEventListener('click', () => {
-    const content = textarea.value.trim();
-    if (!content) {
-      alert("Note is empty.");
-      return;
-    }
-
-    let notes = getNotes();
-    const title = content.split('\n')[0].slice(0, 30) || 'Untitled';
-    const newNote = {
-      title,
-      content,
-      date: new Date().toISOString()
+    const titleDiv = document.createElement('div');
+    titleDiv.className = 'note-title';
+    titleDiv.textContent = note.title || 'Untitled Note';
+    titleDiv.onclick = () => {
+      editor.innerHTML = note.content;
     };
 
-    if (!notes.find(n => n.content === content)) {
-      notes.unshift(newNote);
-      localStorage.setItem('savedNotes', JSON.stringify(notes));
-      renderNotesList();
-      alert("Note saved!");
-    } else {
-      alert("This note is already saved.");
+    const metaDiv = document.createElement('div');
+    metaDiv.className = 'note-meta';
+
+    const timeDiv = document.createElement('div');
+    timeDiv.className = 'note-time';
+    timeDiv.id = `note-time-${index}`;
+    if (note.timestamp) {
+      const relative = getRelativeTime(note.timestamp);
+      const absolute = note.formatted;
+      timeDiv.innerHTML = `🕒 ${relative}<br>(${absolute})`;
+    }
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'delete-note';
+    deleteBtn.innerHTML = '🗑️';
+    deleteBtn.onclick = () => {
+      notes.splice(index, 1);
+      saveNotes();
+      updateNotesList();
+    };
+
+    metaDiv.appendChild(timeDiv);
+    metaDiv.appendChild(deleteBtn);
+
+    li.appendChild(checkbox);
+    li.appendChild(titleDiv);
+    li.appendChild(metaDiv);
+    notesList.appendChild(li);
+  });
+}
+
+function saveNotes() {
+  localStorage.setItem('greenNotes', JSON.stringify(notes));
+}
+
+saveBtn.addEventListener('click', () => {
+  const content = editor.innerHTML.trim();
+  if (content) {
+    const titleMatch = content.match(/<h1>(.*?)<\/h1>/);
+    const title = titleMatch ? titleMatch[1] : 'Untitled Note';
+    const timestamp = new Date().toISOString();
+    const formatted = new Date().toLocaleString();
+    notes.push({ title, content, timestamp, formatted });
+    saveNotes();
+    updateNotesList();
+    alert('Note saved!');
+  } else {
+    alert('Write something before saving.');
+  }
+});
+
+addNoteBtn.onclick = () => {
+  editor.innerHTML = '';
+};
+
+clearBtn.onclick = () => {
+  editor.innerHTML = '';
+};
+
+exportBtn.onclick = () => {
+  const content = editor.innerText;
+  const blob = new Blob([content], { type: 'text/markdown' });
+  const link = document.createElement('a');
+  link.download = 'note.md';
+  link.href = URL.createObjectURL(blob);
+  link.click();
+};
+
+uploadBtn.onclick = () => uploadInput.click();
+
+uploadInput.addEventListener('change', () => {
+  const file = uploadInput.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      const img = document.createElement('img');
+      img.src = e.target.result;
+      editor.appendChild(img);
+    };
+    reader.readAsDataURL(file);
+  }
+});
+
+attachBtn.onclick = () => attachInput.click();
+
+attachInput.addEventListener('change', () => {
+  const file = attachInput.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      const link = document.createElement('a');
+      link.href = e.target.result;
+      link.download = file.name;
+      link.textContent = `📎 ${file.name}`;
+      link.target = '_blank';
+      link.style.display = 'block';
+      link.style.marginTop = '8px';
+      link.style.wordBreak = 'break-all';
+      editor.appendChild(link);
+    };
+    reader.readAsDataURL(file);
+  }
+});
+
+insertTitleBtn.onclick = () => {
+  const title = prompt('Enter your note title:');
+  if (title) {
+    const h1 = document.createElement('h1');
+    h1.textContent = title;
+    editor.appendChild(h1);
+  }
+};
+
+toggleThemeBtn.onclick = () => {
+  document.body.classList.toggle('dark');
+};
+
+deleteSelectedBtn.onclick = () => {
+  const selectedIndexes = Array.from(document.querySelectorAll('.select-note:checked')).map(
+    checkbox => parseInt(checkbox.dataset.index)
+  );
+  notes = notes.filter((_, index) => !selectedIndexes.includes(index));
+  saveNotes();
+  updateNotesList();
+};
+
+deleteAllBtn.onclick = () => {
+  if (confirm('Are you sure you want to delete all notes?')) {
+    notes = [];
+    saveNotes();
+    updateNotesList();
+  }
+};
+
+setInterval(() => {
+  document.querySelectorAll('.note-time').forEach((el, index) => {
+    const note = notes[index];
+    if (note && note.timestamp) {
+      const relative = getRelativeTime(note.timestamp);
+      const absolute = note.formatted;
+      el.innerHTML = `🕒 ${relative}<br>(${absolute})`;
     }
   });
+}, 60000);
 
-  function renderNotesList() {
-    notesList.innerHTML = '';
-    const notes = getNotes();
-
-    notes.forEach((note, index) => {
-      const li = document.createElement('li');
-      const formattedDate = new Date(note.date).toLocaleString();
-
-      li.innerHTML = `
-        <div style="flex:1; overflow:hidden;">
-          <div class="note-title" title="${note.title}">${note.title}</div>
-          <div style="font-size: 0.75rem; color: gray;">${formattedDate}</div>
-        </div>
-        <button class="delete-note" data-index="${index}">🗑️</button>
-      `;
-
-      li.querySelector('.note-title').addEventListener('click', () => {
-        textarea.value = note.content;
-        preview.innerHTML = marked.parse(note.content);
-      });
-
-      li.querySelector('.delete-note').addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (confirm("Delete this note?")) {
-          const updatedNotes = getNotes();
-          updatedNotes.splice(index, 1);
-          localStorage.setItem('savedNotes', JSON.stringify(updatedNotes));
-          renderNotesList();
-        }
-      });
-
-      notesList.appendChild(li);
-    });
-  }
-
-  renderNotesList();
-});
+updateNotesList();
